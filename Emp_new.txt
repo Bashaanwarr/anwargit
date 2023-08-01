@@ -1,0 +1,5 @@
+EMPID,EMPNAME,LOCATION
+1,Ashok,Hyd
+2,anwar,tdp
+3,kishore,knl
+4,karn,Bnglore

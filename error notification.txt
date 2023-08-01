@@ -1,0 +1,67 @@
+create database simple;
+CREATE NOTIFICATION INTEGRATION snowpipeerror
+  ENABLED = true
+  TYPE = QUEUE
+  NOTIFICATION_PROVIDER = AWS_SNS
+  DIRECTION = OUTBOUND
+  AWS_SNS_TOPIC_ARN = 'arn:aws:sns:ap-southeast-1:512682448905:demosnowpipenotifiaction'
+  AWS_SNS_ROLE_ARN = 'arn:aws:iam::512682448905:role/snowpipedemoerrornotification';
+
+  desc integration snowpipeerror;
+create file format file_fmat
+  type=csv
+  field_delimiter=','
+  skip_header=1;
+
+  create or replace storage integration storage_integrate
+type='external_stage'
+storage_provider=s3
+storage_allowed_locations=('s3://snowpipeerror')
+enabled=true
+storage_aws_role_arn='arn:aws:iam::512682448905:role/snowpipeerror'
+desc storage integration storage_integrate
+
+  create stage error_stage1
+  url='s3://snowpipeerror'
+  file_format='file_fmat'
+  storage_integration=storage_integrate
+
+  list @error_stage1
+
+   create table dept(id int, name varchar(20), location varchar(20));
+  
+  copy into dept from @error_stage1
+
+  create or replace pipe errorpipe
+  auto_ingest=true
+  error_integration=snowpipeerror
+  as 
+   copy into dept from @error_stage1
+
+   list @error_stage1
+
+
+   select system$pipe_status('errorpipe')
+
+
+   copy into @error_stage1
+
+   from dept
+
+FILE_FORMAT = ( COMPRESSION='NONE')
+overwrite=true
+
+   
+
+   desc pipe errorpipe
+
+   show pipes
+
+   select
+
+    select * from TABLE(information_schema.copy_history
+ (table_name => 'simple.PUBLIC.dept',
+ start_time => DATEADD('HOUR',-1, CURRENT_TIMESTAMP())));
+  
+  
+  
